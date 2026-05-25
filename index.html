@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>排序算法可视化</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0d1c2d 0%, #1e3a5f 50%, #0d1c2d 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+    }
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(29, 58, 95, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0, 145, 243, 0.3);
+      z-index: 100;
+    }
+    .navbar-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logo-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      background: linear-gradient(135deg, #0091f3, #00d4ff);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 145, 243, 0.5); }
+      50% { box-shadow: 0 0 40px rgba(0, 145, 243, 0.8); }
+    }
+    .logo-text h1 { font-size: 1.25rem; color: white; }
+    .logo-text p { font-size: 0.75rem; color: #94a3b8; }
+    .nav-links { display: flex; gap: 0.5rem; }
+    .nav-link {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      color: #94a3b8;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .nav-link:hover, .nav-link.active {
+      background: #0091f3;
+      color: white;
+    }
+    .main-content {
+      margin-top: 6rem;
+      padding: 2rem;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .section-title {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .section-title h1 {
+      font-size: 2.5rem;
+      color: white;
+      margin-bottom: 0.5rem;
+    }
+    .section-title p { color: #94a3b8; font-size: 1.1rem; }
+    .card {
+      background: rgba(30, 58, 95, 0.5);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      border: 1px solid rgba(0, 145, 243, 0.2);
+      backdrop-filter: blur(10px);
+    }
+    .grid { display: grid; gap: 1.5rem; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 2fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .navbar-content { flex-direction: column; gap: 1rem; }
+    }
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-primary { background: #0091f3; color: white; }
+    .btn-primary:hover { background: #0074c2; transform: translateY(-2px); }
+    .btn-secondary { background: #475569; color: white; }
+    .btn-secondary:hover { background: #64748b; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-purple { background: #8b5cf6; color: white; }
+    .btn-purple:hover { background: #7c3aed; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label {
+      display: block;
+      color: #94a3b8;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+    .form-group input[type="range"] {
+      width: 100%;
+      height: 0.5rem;
+      border-radius: 0.25rem;
+      background: #334155;
+      appearance: none;
+      cursor: pointer;
+    }
+    .form-group input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 50%;
+      background: #0091f3;
+      cursor: pointer;
+    }
+    .visualizer-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      min-height: 400px;
+      height: 450px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2px;
+      position: relative;
+    }
+    .bar {
+      border-radius: 4px 4px 0 0;
+      transition: all 0.15s ease;
+      min-width: 4px;
+      position: absolute;
+      bottom: 0;
+    }
+    .bar-default { background: linear-gradient(to top, #0091f3, #00d4ff); }
+    .bar-comparing { background: #fbbf24; }
+    .bar-swapping { background: #ef4444; }
+    .bar-sorted { background: #22c55e; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .stat-card {
+      background: rgba(30, 41, 59, 0.5);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.5rem;
+    }
+    .stat-icon.time { background: rgba(0, 145, 243, 0.2); }
+    .stat-icon.comp { background: rgba(251, 191, 36, 0.2); }
+    .stat-icon.swap { background: rgba(34, 197, 94, 0.2); }
+    .stat-value { font-size: 1.5rem; font-weight: bold; color: white; }
+    .stat-label { font-size: 0.875rem; color: #94a3b8; }
+    .algo-card {
+      background: rgba(30, 41, 59, 0.5);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+    .algo-card:hover { transform: translateY(-4px); }
+    .algo-card.selected {
+      border-color: #0091f3;
+      background: rgba(0, 145, 243, 0.1);
+    }
+    .algo-name { font-weight: 600; color: white; }
+    .algo-complexity { font-size: 0.875rem; color: #94a3b8; }
+    .chart-container {
+      background: rgba(30, 58, 95, 0.5);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      border: 1px solid rgba(0, 145, 243, 0.2);
+    }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(71, 85, 105, 0.5);
+    }
+    .table th { color: #94a3b8; font-weight: 600; }
+    .table td { color: #e2e8f0; }
+    .table tr:hover { background: rgba(0, 145, 243, 0.1); }
+    pre {
+      background: #0f172a;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.875rem;
+      color: #e2e8f0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-category { background: rgba(0, 145, 243, 0.2); color: #00d4ff; }
+    .badge-stable { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .badge-unstable { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .section { display: none; }
+    .section.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .legend { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; color: #94a3b8; }
+    .legend-color { width: 1rem; height: 1rem; border-radius: 2px; }
+    .btn-group { display: flex; gap: 0.5rem; }
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: #94a3b8;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(0, 145, 243, 0.3);
+      border-top-color: #0091f3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>排序算法可视化</h1>
+          <p>Sorting Algorithm Visualizer</p>
+        </div>
+      </div>
+      <div class="nav-links">
+        <span class="nav-link active" onclick="showTab('visualize')">可视化演示</span>
+        <span class="nav-link" onclick="showTab('compare')">性能对比</span>
+        <span class="nav-link" onclick="showTab('algorithms')">算法详情</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div id="visualize" class="section active">
+      <div class="section-title">
+        <h1>排序算法可视化</h1>
+        <p>选择排序算法，调整参数，观看实时动画演示</p>
+      </div>
+      
+      <div class="grid grid-3">
+        <div class="grid-span-2">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h2 style="color: white; font-size: 1.25rem;">排序可视化</h2>
+              <span style="color: #94a3b8; font-size: 0.875rem;">步骤: <span id="step-counter">0</span> / <span id="total-steps">0</span></span>
+            </div>
+            <div class="visualizer-container" id="visualizer"></div>
+            <div class="legend">
+              <div class="legend-item"><div class="legend-color" style="background: linear-gradient(to top, #0091f3, #00d4ff);"></div>未排序</div>
+              <div class="legend-item"><div class="legend-color" style="background: #fbbf24;"></div>比较中</div>
+              <div class="legend-item"><div class="legend-color" style="background: #ef4444;"></div>交换中</div>
+              <div class="legend-item"><div class="legend-color" style="background: #22c55e;"></div>已排序</div>
+            </div>
+          </div>
+          
+          <div class="stats-grid" style="margin-top: 1.5rem;">
+            <div class="stat-card">
+              <div class="stat-icon time">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0091f3" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-time">0.00</div>
+              <div class="stat-label">毫秒</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon comp">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-comp">0</div>
+              <div class="stat-label">比较次数</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon swap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+                  <polyline points="16 3 21 8 16 13"/>
+                  <polyline points="8 3 3 8 8 13"/>
+                  <line x1="21" y1="8" x2="3" y2="8"/>
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-swap">0</div>
+              <div class="stat-label">交换次数</div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <div class="card">
+            <h2 style="color: white; font-size: 1.25rem; margin-bottom: 1rem;">选择排序算法</h2>
+            <div class="grid grid-2 gap-0.75rem" id="algo-selector"></div>
+          </div>
+          
+          <div class="card" style="margin-top: 1.5rem;">
+            <h2 style="color: white; font-size: 1.25rem; margin-bottom: 1rem;">控制面板</h2>
+            
+            <div class="form-group">
+              <label>数据规模: <span id="size-value">30</span></label>
+              <input type="range" id="size-slider" min="10" max="80" value="30">
+            </div>
+            
+            <div class="form-group">
+              <label>动画速度: <span id="speed-value">5</span>x</label>
+              <input type="range" id="speed-slider" min="1" max="20" value="5">
+            </div>
+            
+            <div class="btn-group" style="width: 100%; gap: 0.5rem;">
+              <button id="btn-play" class="btn btn-primary" style="flex: 1;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="display: inline-block; margin-right: 0.5rem; vertical-align: middle;">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                运行
+              </button>
+              <button id="btn-pause" class="btn btn-warning" style="flex: 1;" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="display: inline-block; margin-right: 0.5rem; vertical-align: middle;">
+                  <rect x="6" y="4" width="4" height="16"/>
+                  <rect x="14" y="4" width="4" height="16"/>
+                </svg>
+                暂停
+              </button>
+            </div>
+            
+            <div class="btn-group" style="width: 100%; margin-top: 0.5rem;">
+              <button id="btn-reset" class="btn btn-secondary" style="flex: 1;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="display: inline-block; margin-right: 0.5rem; vertical-align: middle;">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a1.993 1.993 0 0 0-1.414-.586l-3.108 3.108-2.094-2.094-4.132 4.132A2 2 0 0 0 8.66 21H3"/>
+                </svg>
+                重置
+              </button>
+              <button id="btn-generate" class="btn btn-purple" style="flex: 1;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="display: inline-block; margin-right: 0.5rem; vertical-align: middle;">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+                生成
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="compare" class="section">
+      <div class="section-title">
+        <h1>算法性能对比</h1>
+        <p>对比8种排序算法在相同数据集上的性能表现</p>
+      </div>
+      
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="color: #94a3b8;">数据规模:</label>
+            <input type="range" id="compare-size" min="20" max="80" value="50" style="width: 150px;">
+            <span id="compare-size-label" style="color: white;">50</span>
+          </div>
+          <button id="btn-run-all" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="display: inline-block; margin-right: 0.5rem;">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a1.993 1.993 0 0 0-1.414-.586l-3.108 3.108-2.094-2.094-4.132 4.132A2 2 0 0 0 8.66 21H3"/>
+            </svg>
+            重新运行测试
+          </button>
+        </div>
+      </div>
+      
+      <div id="compare-loading" class="loading">
+        <div class="spinner"></div>
+      </div>
+      
+      <div id="compare-content" style="display: none;">
+        <div class="grid grid-2">
+          <div class="chart-container">
+            <canvas id="bar-chart"></canvas>
+          </div>
+          <div class="chart-container">
+            <canvas id="line-chart"></canvas>
+          </div>
+        </div>
+        
+        <div class="chart-container" style="margin-top: 1.5rem;">
+          <canvas id="radar-chart"></canvas>
+        </div>
+        
+        <div class="card" style="margin-top: 1.5rem;">
+          <h2 style="color: white; font-size: 1.25rem; margin-bottom: 1rem;">性能数据汇总</h2>
+          <div style="overflow-x: auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>算法名称</th>
+                  <th>执行时间(ms)</th>
+                  <th>比较次数</th>
+                  <th>交换次数</th>
+                </tr>
+              </thead>
+              <tbody id="results-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="algorithms" class="section">
+      <div class="section-title">
+        <h1>算法详情</h1>
+        <p>深入了解每种排序算法的原理、复杂度分析和代码实现</p>
+      </div>
+      
+      <div class="grid grid-2" id="algorithms-grid"></div>
+      
+      <div class="card" style="margin-top: 2rem;">
+        <h2 style="color: white; font-size: 1.5rem; margin-bottom: 1.5rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0091f3" stroke-width="2" style="display: inline-block; margin-right: 0.5rem;">
+            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+          算法选择指南
+        </h2>
+        
+        <div class="grid grid-4" style="gap: 1.5rem;">
+          <div>
+            <h3 style="color: #0091f3; font-size: 1.1rem; margin-bottom: 0.75rem;">O(n log n) 算法</h3>
+            <ul style="list-style: none; color: #94a3b8;">
+              <li style="margin-bottom: 0.5rem;"><strong>快速排序</strong>: 平均性能最优</li>
+              <li style="margin-bottom: 0.5rem;"><strong>堆排序</strong>: 最坏情况稳定</li>
+              <li><strong>归并排序</strong>: 稳定排序，适合外部排序</li>
+            </ul>
+          </div>
+          <div>
+            <h3 style="color: #fbbf24; font-size: 1.1rem; margin-bottom: 0.75rem;">O(n²) 算法</h3>
+            <ul style="list-style: none; color: #94a3b8;">
+              <li style="margin-bottom: 0.5rem;"><strong>插入排序</strong>: 数据基本有序时效率高</li>
+              <li style="margin-bottom: 0.5rem;"><strong>冒泡排序</strong>: 实现简单</li>
+              <li><strong>选择排序</strong>: 移动次数最少</li>
+            </ul>
+          </div>
+          <div>
+            <h3 style="color: #22c55e; font-size: 1.1rem; margin-bottom: 0.75rem;">非比较排序</h3>
+            <ul style="list-style: none; color: #94a3b8;">
+              <li style="margin-bottom: 0.5rem;"><strong>希尔排序</strong>: 插入排序改进版</li>
+              <li><strong>基数排序</strong>: 适用于整数排序</li>
+            </ul>
+          </div>
+          <div>
+            <h3 style="color: #8b5cf6; font-size: 1.1rem; margin-bottom: 0.75rem;">选择建议</h3>
+            <ul style="list-style: none; color: #94a3b8;">
+              <li style="margin-bottom: 0.5rem;">小规模数据: 插入排序</li>
+              <li style="margin-bottom: 0.5rem;">大规模数据: 快速排序</li>
+              <li>需要稳定排序: 归并排序</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const algorithms = [
+      { id: 'bubble', name: '冒泡排序', nameEn: 'Bubble Sort', time: 'O(n²)', space: 'O(1)', stable: true, category: '交换排序', desc: '通过相邻元素之间的比较和交换，将较大的元素逐步"冒泡"到序列的末端。' },
+      { id: 'insertion', name: '插入排序', nameEn: 'Insertion Sort', time: 'O(n²)', space: 'O(1)', stable: true, category: '插入排序', desc: '将未排序的元素逐个插入到已排序序列的适当位置。' },
+      { id: 'shell', name: '希尔排序', nameEn: 'Shell Sort', time: 'O(n^1.3)', space: 'O(1)', stable: false, category: '插入排序', desc: '将序列分割成若干子序列分别进行插入排序，逐步缩小增量。' },
+      { id: 'quick', name: '快速排序', nameEn: 'Quick Sort', time: 'O(n log n)', space: 'O(log n)', stable: false, category: '交换排序', desc: '选择基准元素，将序列分为两部分，递归对左右部分排序。' },
+      { id: 'selection', name: '选择排序', nameEn: 'Selection Sort', time: 'O(n²)', space: 'O(1)', stable: false, category: '选择排序', desc: '每次选择最小元素放到已排序序列末尾。' },
+      { id: 'heap', name: '堆排序', nameEn: 'Heap Sort', time: 'O(n log n)', space: 'O(1)', stable: false, category: '选择排序', desc: '利用堆数据结构，每次提取最大元素放到已排序序列。' },
+      { id: 'merge', name: '归并排序', nameEn: 'Merge Sort', time: 'O(n log n)', space: 'O(n)', stable: true, category: '归并排序', desc: '分治策略，递归分割并合并有序序列。' },
+      { id: 'radix', name: '基数排序', nameEn: 'Radix Sort', time: 'O(k*n)', space: 'O(n+k)', stable: true, category: '基数排序', desc: '按位数从低到高进行桶排序，非比较类排序算法。' },
+    ];
+
+    let currentArray = [];
+    let currentSteps = [];
+    let currentStepIndex = 0;
+    let animationInterval = null;
+    let selectedAlgorithm = 'bubble';
+    let arraySize = 30;
+    let animationSpeed = 5;
+    let isPlaying = false;
+    let barCharts = [], lineChart = null, radarChart = null;
+
+    function generateRandomArray(size) {
+      return Array.from({ length: size }, () => Math.floor(Math.random() * 100) + 1);
+    }
+
+    function bubbleSort(arr) {
+      const array = [...arr];
+      const steps = [];
+      let comparisons = 0;
+      let swaps = 0;
+      const sorted = new Set();
+      const n = array.length;
+      
+      for (let i = 0; i < n - 1; i++) {
+        let swapped = false;
+        for (let j = 0; j < n - i - 1; j++) {
+          comparisons++;
+          steps.push({ arr: [...array], comparing: [j, j+1], sorted: [...sorted], swaps, comparisons });
+          
+          if (array[j] > array[j+1]) {
+            [array[j], array[j+1]] = [array[j+1], array[j]];
+            swaps++;
+            swapped = true;
+            steps.push({ arr: [...array], swapping: [j, j+1], sorted: [...sorted], swaps, comparisons });
+          }
+        }
+        sorted.add(n - 1 - i);
+        if (!swapped) break;
+      }
+      sorted.add(0);
+      
+      return { steps, comparisons, swaps, finalArray: array };
+    }
+
+    function insertionSort(arr) {
+      const array = [...arr];
+      const steps = [];
+      let comparisons = 0;
+      let moves = 0;
+      const sorted = new Set([0]);
+      const n = array.length;
+      
+      for (let i = 1; i < n; i++) {
+        const key = array[i];
+        let j = i - 1;
+        
+        steps.push({ arr: [...array], comparing: [i], sorted: [...sorted], moves, comparisons });
+        
+        while (j >= 0 && array[j] > key) {
+          comparisons++;
+          steps.push({ arr: [...array], comparing: [j, j+1], sorted: [...sorted], moves, comparisons });
+          
+          array[j+1] = array[j];
+          moves++;
+          steps.push({ arr: [...array], swapping: [j, j+1], sorted: [...sorted], moves, comparisons });
+          j--;
+        }
+        if (j >= 0) comparisons++;
+        array[j+1] = key;
+        moves++;
+        steps.push({ arr: [...array], swapping: [j+1], sorted: [...sorted], moves, comparisons });
+        sorted.add(i);
+      }
+      
+      return { steps, comparisons, moves, finalArray: array };
+    }
+
+    function shellSort(arr) {
+      const array = [...arr];
+      const steps = [];
+      let comparisons = 0;
+      let moves = 0;
+      const n = array.length;
+      
+      for (let gap = Math.floor(n / 2); gap > 0; gap = Math.floor(gap / 2)) {
+        for (let i = gap; i < n; i++) {
+          const temp = array[i];
+          let j = i;
+          
+          moves++;
+          steps.push({ arr: [...array], comparing: [i], moves, comparisons });
+          
+          while (j >= gap && array[j - gap] > temp) {
+            comparisons++;
+            steps.push({ arr: [...array], comparing: [j - gap, j], moves, comparisons });
+            
+            array[j] = array[j - gap];
+            moves++;
+            steps.push({ arr: [...array], swapping: [j - gap, j], moves, comparisons });
+            j -= gap;
+          }
+          if (j >= gap) comparisons++;
+          
+          if (array[j] !== temp) {
+            array[j] = temp;
+            moves++;
+            steps.push({ arr: [...array], swapping: [j], moves, comparisons });
+          }
+        }
+      }
+      
+      const sorted = Array.from({ length: n }, (_, i) => i);
+      steps.push({ arr: [...array], sorted, moves, comparisons });
+      
+      return { steps, comparisons, moves, finalArray: array };
+    }
+
+    function quickSort(arr) {
+      const array = [...arr];
+      const steps = [];
+      let comparisons = 0;
+      let swaps = 0;
+      const sorted = new Set();
+      
+      function partition(low, high) {
+        const pivot = array[high];
+        let i = low - 1;
+        
+        steps.push({ arr: [...array], comparing: [high], sorted: [...sorted], swaps, comparisons });
+        
+        for (let j = low; j < high; j++) {
+          comparisons++;
+          steps.push({ arr: [...array], comparing: [j, high], sorted: [...sorted], swaps, comparisons });
+          
+          if (array[j] < pivot) {
+            i++;
+            if (i !== j) {
+              [array[i], array[j]] = [array[j], array[i]];
+              swaps++;
+              steps.push({ arr: [...array], swapping: [i, j], sorted: [...sorted], swaps, comparisons });
+            }
+          }
+        }
+        
+        if (i + 1 !== high) {
+          [array[i + 1], array[high]] = [array[high], array[i + 1]];
+          swaps++;
+          steps.push({ arr: [...array], swapping: [i + 1, high], sorted: [...sorted], swaps, comparisons });
+        }
+        
+        return i + 1;
+      }
+      
+      function quickSortHelper(low, high) {
+        if (low < high) {
+          const pi = partition(low, high);
+          sorted.add(pi);
+          steps.push({ arr: [...array], sorted: [...sorted], swaps, comparisons });
+          quickSortHelper(low, pi - 1);
+          quickSortHelper(pi + 1, high);
+        } else if (low === high) {
+          sorted.add(low);
+          steps.push({ arr: [...array], sorted: [...sorted], swaps, comparisons });
+        }
+      }
+      
+      quickSortHelper(0, array.length - 1);
+      
+      return { steps, comparisons, swaps, finalArray: array };
+    }
+
+    function selectionSort(arr) {
+      const array = [...arr];
+      const steps = [];
+      let comparisons = 0;
+      let swaps = 0;
+      const sorted = new Set();
+      const n = array.length;
+      
+      for (let i = 0; i < n - 1; i++) {
+        let minIdx = i;
+        
+        for (let j = i + 1; j < n; j++) {
+          comparisons++;
+          steps.push({ arr: [...array], comparing: [minIdx, j], sorted: [...sorted], swaps, comparisons });
+          
+          if (array[j] < array[minIdx]) {
+            minIdx = j;
+          }
+        }
+        
+        if (minIdx !== i) {
+          [array[i], array[minIdx]] = [array[minIdx], array[i]];
+          swaps++;
+          steps.push({ arr: [...array], swapping: [i, minIdx], sorted: [...sorted], swaps, comparisons });
+        }
+        sorted.add(i);
+      }
+      sorted.add(n - 1);
+      
+      return { steps, comparisons, swaps, finalArray: array };
+    }
+
+    function heapSort(arr) {
+      const array = [...arr];
+      const steps = [];
+      let comparisons = 0;
+      let swaps = 0;
+      const sorted = new Set();
+      const n = array.length;
+      
+      function heapify(size, i) {
+        let largest = i;
+        const l = 2 * i + 1;
+        const r = 2 * i + 2;
+        
+        if (l < size) {
+          comparisons++;
+          steps.push({ arr: [...array], comparing: [largest, l], sorted: [...sorted], swaps, comparisons });
+          if (array[l] > array[largest]) largest = l;
+        }
+        
+        if (r < size) {
+          comparisons++;
+          steps.push({ arr: [...array], comparing: [largest, r], sorted: [...sorted], swaps, comparisons });
+          if (array[r] > array[largest]) largest = r;
+        }
+        
+        if (largest !== i) {
+          [array[i], array[largest]] = [array[largest], array[i]];
+          swaps++;
+          steps.push({ arr: [...array], swapping: [i, largest], sorted: [...sorted], swaps, comparisons });
+          heapify(size, largest);
+        }
+      }
+      
+      for (let i = Math.floor(n / 2) - 1; i >= 0; i--) heapify(n, i);
+      
+      for (let i = n - 1; i > 0; i--) {
+        [array[0], array[i]] = [array[i], array[0]];
+        swaps++;
+        sorted.add(i);
+        steps.push({ arr: [...array], swapping: [0, i], sorted: [...sorted], swaps, comparisons });
+        heapify(i, 0);
+      }
+      sorted.add(0);
+      steps.push({ arr: [...array], sorted: [...sorted], swaps, comparisons });
+      
+      return { steps, comparisons, swaps, finalArray: array };
+    }
+
+    function mergeSort(arr) {
+      const array = [...arr];
+      const steps = [];
+      let comparisons = 0;
+      let moves = 0;
+      
+      function merge(leftArr, mid, rightArr) {
+        const left = array.slice(leftArr, mid + 1);
+        const right = array.slice(mid + 1, rightArr + 1);
+        let i = 0, j = 0, k = leftArr;
+        
+        while (i < left.length && j < right.length) {
+          comparisons++;
+          steps.push({ arr: [...array], comparing: [leftArr + i, mid + 1 + j], moves, comparisons });
+          
+          if (left[i] <= right[j]) {
+            if (array[k] !== left[i]) {
+              array[k] = left[i];
+              moves++;
+              steps.push({ arr: [...array], swapping: [k], moves, comparisons });
+            }
+            i++;
+          } else {
+            if (array[k] !== right[j]) {
+              array[k] = right[j];
+              moves++;
+              steps.push({ arr: [...array], swapping: [k], moves, comparisons });
+            }
+            j++;
+          }
+          k++;
+        }
+        
+        while (i < left.length) {
+          if (array[k] !== left[i]) {
+            array[k] = left[i];
+            moves++;
+            steps.push({ arr: [...array], swapping: [k], moves, comparisons });
+          }
+          i++;
+          k++;
+        }
+        
+        while (j < right.length) {
+          if (array[k] !== right[j]) {
+            array[k] = right[j];
+            moves++;
+            steps.push({ arr: [...array], swapping: [k], moves, comparisons });
+          }
+          j++;
+          k++;
+        }
+      }
+      
+      function mergeSortHelper(left, right) {
+        if (left < right) {
+          const mid = Math.floor((left + right) / 2);
+          mergeSortHelper(left, mid);
+          mergeSortHelper(mid + 1, right);
+          merge(left, mid, right);
+        }
+      }
+      
+      mergeSortHelper(0, array.length - 1);
+      
+      const sorted = Array.from({ length: array.length }, (_, i) => i);
+      steps.push({ arr: [...array], sorted, moves, comparisons });
+      
+      return { steps, comparisons, moves, finalArray: array };
+    }
+
+    function radixSort(arr) {
+      const array = [...arr];
+      const steps = [];
+      let moves = 0;
+      
+      const maxNum = Math.max(...array);
+      let divisor = 1;
+      
+      while (maxNum / divisor > 0) {
+        const buckets = Array.from({ length: 10 }, () => []);
+        
+        for (let i = 0; i < array.length; i++) {
+          const digit = Math.floor((array[i] / divisor) % 10);
+          buckets[digit].push(array[i]);
+        }
+        
+        let idx = 0;
+        for (let d = 0; d < 10; d++) {
+          for (let i = 0; i < buckets[d].length; i++) {
+            if (array[idx] !== buckets[d][i]) {
+              array[idx] = buckets[d][i];
+              moves++;
+              steps.push({ arr: [...array], swapping: [idx], moves, comparisons: 0 });
+            }
+            idx++;
+          }
+        }
+        
+        divisor *= 10;
+      }
+      
+      const sorted = Array.from({ length: array.length }, (_, i) => i);
+      steps.push({ arr: [...array], sorted, moves, comparisons: 0 });
+      
+      return { steps, comparisons: 0, moves, finalArray: array };
+    }
+
+    const sortFunctions = {
+      bubble: bubbleSort,
+      insertion: insertionSort,
+      shell: shellSort,
+      quick: quickSort,
+      selection: selectionSort,
+      heap: heapSort,
+      merge: mergeSort,
+      radix: radixSort,
+    };
+
+    function renderVisualizer(array, comparing = [], swapping = [], sorted = []) {
+      const container = document.getElementById('visualizer');
+      if (!container) return;
+      
+      const maxValue = Math.max(...array);
+      const containerWidth = container.offsetWidth || 600;
+      const containerHeight = container.offsetHeight || 300;
+      const padding = 20;
+      const barGap = Math.max(1, Math.floor((containerWidth - padding * 2) / array.length / 2));
+      const barWidth = Math.max(2, (containerWidth - padding * 2 - barGap * (array.length - 1)) / array.length);
+      
+      container.innerHTML = '';
+      container.style.position = 'relative';
+      
+      array.forEach((value, index) => {
+        const height = maxValue > 0 ? (value / maxValue) * (containerHeight - padding * 2) : 0;
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        
+        let colorClass = 'bar-default';
+        
+        if (sorted.includes(index)) {
+          colorClass = 'bar-sorted';
+        }
+        else if (swapping.includes(index)) {
+          colorClass = 'bar-swapping';
+        }
+        else if (comparing.includes(index)) {
+          colorClass = 'bar-comparing';
+        }
+        
+        bar.className += ' ' + colorClass;
+        bar.style.width = barWidth + 'px';
+        bar.style.height = Math.max(2, height) + 'px';
+        bar.style.left = (padding + index * (barWidth + barGap)) + 'px';
+        bar.style.bottom = '0px';
+        bar.title = `值: ${value}`;
+        
+        container.appendChild(bar);
+      });
+    }
+
+    function updateStats(time, comp, swap) {
+      const timeEl = document.getElementById('stat-time');
+      const compEl = document.getElementById('stat-comp');
+      const swapEl = document.getElementById('stat-swap');
+      
+      if (timeEl) timeEl.textContent = time.toFixed(2);
+      if (compEl) compEl.textContent = typeof comp === 'number' ? comp.toLocaleString() : '0';
+      if (swapEl) swapEl.textContent = typeof swap === 'number' ? swap.toLocaleString() : '0';
+    }
+
+    function playAnimation() {
+      if (currentSteps.length === 0) {
+        const startTime = performance.now();
+        const result = sortFunctions[selectedAlgorithm](currentArray);
+        const endTime = performance.now();
+        currentSteps = result.steps.map(step => ({
+          ...step,
+          time: endTime - startTime
+        }));
+        document.getElementById('total-steps').textContent = currentSteps.length;
+      }
+      
+      isPlaying = true;
+      document.getElementById('btn-play').disabled = true;
+      document.getElementById('btn-pause').disabled = false;
+      document.getElementById('btn-reset').disabled = true;
+      document.getElementById('btn-generate').disabled = true;
+      
+      const step = currentSteps[currentStepIndex];
+      if (step) {
+        renderVisualizer(step.arr, step.comparing || [], step.swapping || [], step.sorted || []);
+        updateStats(step.time || 0, step.comparisons || 0, step.moves !== undefined ? step.moves : (step.swaps || 0));
+        document.getElementById('step-counter').textContent = currentStepIndex + 1;
+      }
+      
+      animationInterval = setTimeout(() => {
+        if (currentStepIndex < currentSteps.length - 1) {
+          currentStepIndex++;
+          playAnimation();
+        } else {
+          pauseAnimation();
+        }
+      }, 1000 / animationSpeed);
+    }
+
+    function pauseAnimation() {
+      isPlaying = false;
+      clearTimeout(animationInterval);
+      document.getElementById('btn-play').disabled = false;
+      document.getElementById('btn-pause').disabled = true;
+      document.getElementById('btn-reset').disabled = false;
+      document.getElementById('btn-generate').disabled = false;
+    }
+
+    function resetVisualizer() {
+      pauseAnimation();
+      currentArray = generateRandomArray(arraySize);
+      currentSteps = [];
+      currentStepIndex = 0;
+      renderVisualizer(currentArray);
+      updateStats(0, 0, 0);
+      document.getElementById('step-counter').textContent = 0;
+      document.getElementById('total-steps').textContent = 0;
+    }
+
+    function generateNewArray() {
+      resetVisualizer();
+    }
+
+    function initAlgoSelector() {
+      const container = document.getElementById('algo-selector');
+      if (!container) return;
+      
+      algorithms.forEach(algo => {
+        const card = document.createElement('div');
+        card.className = `algo-card ${selectedAlgorithm === algo.id ? 'selected' : ''}`;
+        card.innerHTML = `<div class="algo-name">${algo.name}</div><div class="algo-complexity">${algo.time}</div>`;
+        card.onclick = () => {
+          selectedAlgorithm = algo.id;
+          document.querySelectorAll('.algo-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          resetVisualizer();
+        };
+        container.appendChild(card);
+      });
+    }
+
+    function initAlgorithmsGrid() {
+      const container = document.getElementById('algorithms-grid');
+      if (!container) return;
+      
+      const codeExamples = {
+        bubble: `function bubbleSort(arr) {
+  const n = arr.length;
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = 0; j < n - i - 1; j++) {
+      if (arr[j] > arr[j + 1]) {
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+      }
+    }
+  }
+}`,
+        insertion: `function insertionSort(arr) {
+  for (let i = 1; i < arr.length; i++) {
+    let key = arr[i];
+    let j = i - 1;
+    while (j >= 0 && arr[j] > key) {
+      arr[j + 1] = arr[j];
+      j--;
+    }
+    arr[j + 1] = key;
+  }
+}`,
+        shell: `function shellSort(arr) {
+  for (let gap = arr.length >> 1; gap > 0; gap >>= 1) {
+    for (let i = gap; i < arr.length; i++) {
+      let temp = arr[i], j;
+      for (j = i; j >= gap && arr[j - gap] > temp; j -= gap) {
+        arr[j] = arr[j - gap];
+      }
+      arr[j] = temp;
+    }
+  }
+}`,
+        quick: `function quickSort(arr) {
+  if (arr.length <= 1) return arr;
+  const pivot = arr[arr.length >> 1];
+  const left = arr.filter(x => x < pivot);
+  const mid = arr.filter(x => x === pivot);
+  const right = arr.filter(x => x > pivot);
+  return [...quickSort(left), ...mid, ...quickSort(right)];
+}`,
+        selection: `function selectionSort(arr) {
+  for (let i = 0; i < arr.length - 1; i++) {
+    let minIdx = i;
+    for (let j = i + 1; j < arr.length; j++) {
+      if (arr[j] < arr[minIdx]) minIdx = j;
+    }
+    [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+  }
+}`,
+        heap: `function heapSort(arr) {
+  const n = arr.length;
+  for (let i = n >> 1; i >= 0; i--) heapify(arr, n, i);
+  for (let i = n - 1; i > 0; i--) {
+    [arr[0], arr[i]] = [arr[i], arr[0]];
+    heapify(arr, i, 0);
+  }
+}`,
+        merge: `function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+  const mid = arr.length >> 1;
+  const left = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+  return merge(left, right);
+}`,
+        radix: `function radixSort(arr) {
+  const max = Math.max(...arr);
+  for (let d = 1; max / d > 0; d *= 10) {
+    const buckets = Array(10).fill().map(() => []);
+    for (const num of arr) buckets[(num / d) % 10 | 0].push(num);
+    arr = buckets.flat();
+  }
+}`,
+      };
+      
+      algorithms.forEach(algo => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <div>
+              <h3 style="color: white; font-size: 1.25rem;">${algo.name}</h3>
+              <p style="color: #94a3b8; font-size: 0.875rem;">${algo.nameEn}</p>
+            </div>
+            <span class="badge badge-category">${algo.category}</span>
+          </div>
+          <p style="color: #94a3b8; margin-bottom: 1rem;">${algo.desc}</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div style="background: rgba(30, 41, 59, 0.5); border-radius: 0.5rem; padding: 0.75rem;">
+              <div style="color: #94a3b8; font-size: 0.75rem;">时间复杂度</div>
+              <div style="color: white; font-family: monospace;">${algo.time}</div>
+            </div>
+            <div style="background: rgba(30, 41, 59, 0.5); border-radius: 0.5rem; padding: 0.75rem;">
+              <div style="color: #94a3b8; font-size: 0.75rem;">空间复杂度</div>
+              <div style="color: white; font-family: monospace;">${algo.space}</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <span style="color: #94a3b8; margin-right: 0.5rem;">稳定性:</span>
+            <span class="badge ${algo.stable ? 'badge-stable' : 'badge-unstable'}">${algo.stable ? '稳定' : '不稳定'}</span>
+          </div>
+          <div style="border-top: 1px solid rgba(71, 85, 105, 0.5); padding-top: 1rem;">
+            <div style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 0.5rem;">代码实现</div>
+            <pre>${codeExamples[algo.id]}</pre>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function runAllComparisons() {
+      const loadingEl = document.getElementById('compare-loading');
+      const contentEl = document.getElementById('compare-content');
+      
+      if (loadingEl) loadingEl.style.display = 'flex';
+      if (contentEl) contentEl.style.display = 'none';
+      
+      const size = parseInt(document.getElementById('compare-size')?.value) || 50;
+      const testArray = generateRandomArray(size);
+      const results = [];
+      
+      for (const algo of algorithms) {
+        const result = sortFunctions[algo.id](testArray);
+        results.push({
+          name: algo.name,
+          algorithm: algo.id,
+          executionTime: result.steps.length * (1000 / 60),
+          comparisons: result.comparisons,
+          swaps: result.moves !== undefined ? result.moves : result.swaps
+        });
+      }
+      
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (contentEl) contentEl.style.display = 'block';
+      
+      renderCharts(results);
+      renderResultsTable(results);
+    }
+
+    function renderCharts(results) {
+      barCharts.forEach(chart => chart.destroy());
+      barCharts = [];
+      if (lineChart) lineChart.destroy();
+      if (radarChart) radarChart.destroy();
+      
+      const labels = results.map(r => r.name);
+      
+      const barCtx = document.getElementById('bar-chart');
+      if (barCtx) {
+        const barChart = new Chart(barCtx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: '执行时间 (ms)',
+              data: results.map(r => r.executionTime),
+              backgroundColor: 'rgba(0, 145, 243, 0.8)',
+              borderColor: 'rgba(0, 145, 243, 1)',
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: { labels: { color: '#e2e8f0' } },
+              title: { display: true, text: '各算法执行时间对比', color: '#e2e8f0' }
+            },
+            scales: {
+              x: { ticks: { color: '#94a3b8', maxRotation: 45, minRotation: 45 }, grid: { color: '#334155' } },
+              y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+            }
+          }
+        });
+        barCharts.push(barChart);
+      }
+      
+      const lineCtx = document.getElementById('line-chart');
+      if (lineCtx) {
+        lineChart = new Chart(lineCtx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: '比较次数',
+                data: results.map(r => r.comparisons),
+                borderColor: 'rgba(251, 191, 36, 1)',
+                backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                fill: true,
+                tension: 0.4
+              },
+              {
+                label: '移动次数',
+                data: results.map(r => r.swaps),
+                borderColor: 'rgba(34, 197, 94, 1)',
+                backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                fill: true,
+                tension: 0.4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: { labels: { color: '#e2e8f0' } },
+              title: { display: true, text: '比较次数与移动次数趋势', color: '#e2e8f0' }
+            },
+            scales: {
+              x: { ticks: { color: '#94a3b8', maxRotation: 45, minRotation: 45 }, grid: { color: '#334155' } },
+              y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+            }
+          }
+        });
+      }
+      
+      const radarCtx = document.getElementById('radar-chart');
+      if (radarCtx) {
+        const maxComp = Math.max(...results.map(r => r.comparisons));
+        const maxSwap = Math.max(...results.map(r => r.swaps));
+        const maxTime = Math.max(...results.map(r => r.executionTime));
+        
+        radarChart = new Chart(radarCtx, {
+          type: 'radar',
+          data: {
+            labels: ['执行时间', '比较次数', '移动次数'],
+            datasets: results.slice(0, 5).map((r, i) => {
+              const colors = [
+                { bg: 'rgba(0, 145, 243, 0.2)', border: 'rgba(0, 145, 243, 1)' },
+                { bg: 'rgba(251, 191, 36, 0.2)', border: 'rgba(251, 191, 36, 1)' },
+                { bg: 'rgba(34, 197, 94, 0.2)', border: 'rgba(34, 197, 94, 1)' },
+                { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 1)' },
+                { bg: 'rgba(168, 85, 247, 0.2)', border: 'rgba(168, 85, 247, 1)' },
+              ];
+              return {
+                label: r.name,
+                data: [
+                  100 - (r.executionTime / maxTime) * 100,
+                  100 - (r.comparisons / maxComp) * 100,
+                  100 - (r.swaps / maxSwap) * 100,
+                ],
+                backgroundColor: colors[i].bg,
+                borderColor: colors[i].border,
+                borderWidth: 2
+              };
+            })
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: { labels: { color: '#e2e8f0' } },
+              title: { display: true, text: '算法性能综合评估', color: '#e2e8f0' }
+            },
+            scales: {
+              r: {
+                angleLines: { color: '#334155' },
+                grid: { color: '#334155' },
+                pointLabels: { color: '#94a3b8' },
+                ticks: { color: '#94a3b8', backdropColor: 'transparent', stepSize: 20 }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function renderResultsTable(results) {
+      const tbody = document.getElementById('results-table');
+      if (!tbody) return;
+      
+      tbody.innerHTML = results.map(r => `
+        <tr>
+          <td style="font-weight: 600;">${r.name}</td>
+          <td>${r.executionTime.toFixed(2)}</td>
+          <td>${r.comparisons.toLocaleString()}</td>
+          <td>${r.swaps.toLocaleString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    function showTab(tabId) {
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll(`.nav-link[onclick="showTab('${tabId}')"]`).forEach(l => l.classList.add('active'));
+      const section = document.getElementById(tabId);
+      if (section) section.classList.add('active');
+      
+      if (tabId === 'compare') {
+        runAllComparisons();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initAlgoSelector();
+      initAlgorithmsGrid();
+      
+      currentArray = generateRandomArray(arraySize);
+      renderVisualizer(currentArray);
+      
+      const btnPlay = document.getElementById('btn-play');
+      const btnPause = document.getElementById('btn-pause');
+      const btnReset = document.getElementById('btn-reset');
+      const btnGenerate = document.getElementById('btn-generate');
+      const sizeSlider = document.getElementById('size-slider');
+      const speedSlider = document.getElementById('speed-slider');
+      const compareSize = document.getElementById('compare-size');
+      const btnRunAll = document.getElementById('btn-run-all');
+      
+      if (btnPlay) btnPlay.addEventListener('click', playAnimation);
+      if (btnPause) btnPause.addEventListener('click', pauseAnimation);
+      if (btnReset) btnReset.addEventListener('click', resetVisualizer);
+      if (btnGenerate) btnGenerate.addEventListener('click', generateNewArray);
+      if (btnRunAll) btnRunAll.addEventListener('click', runAllComparisons);
+      
+      if (sizeSlider) {
+        sizeSlider.addEventListener('input', e => {
+          arraySize = parseInt(e.target.value);
+          const sizeValue = document.getElementById('size-value');
+          if (sizeValue) sizeValue.textContent = arraySize;
+          resetVisualizer();
+        });
+      }
+      
+      if (speedSlider) {
+        speedSlider.addEventListener('input', e => {
+          animationSpeed = parseInt(e.target.value);
+          const speedValue = document.getElementById('speed-value');
+          if (speedValue) speedValue.textContent = animationSpeed;
+        });
+      }
+      
+      if (compareSize) {
+        compareSize.addEventListener('input', e => {
+          const label = document.getElementById('compare-size-label');
+          if (label) label.textContent = e.target.value;
+        });
+      }
+      
+      window.addEventListener('resize', () => {
+        if (!isPlaying && currentSteps.length === 0) {
+          renderVisualizer(currentArray);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

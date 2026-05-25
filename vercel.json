@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "build": {
+    "command": "echo 'Building static site...'",
+    "outputDirectory": "."
+  }
+}
