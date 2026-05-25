@@ -1,0 +1,11 @@
+{
+  "name": "sorting-visualizer",
+  "version": "1.0.0",
+  "description": "排序算法可视化网站",
+  "scripts": {
+    "build": "echo 'Build completed successfully'"
+  },
+  "keywords": ["sorting", "algorithm", "visualization"],
+  "author": "",
+  "license": "MIT"
+}
